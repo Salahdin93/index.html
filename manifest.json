@@ -1,0 +1,21 @@
+{
+  "name": "Le Chemin Vers Le Coran",
+  "short_name": "Coran",
+  "description": "Votre compagnon pour la lecture et la révision du Coran",
+  "start_url": ".",
+  "display": "standalone",
+  "background_color": "#F5F7FA",
+  "theme_color": "#2E7D32",
+  "icons": [
+    {
+      "src": "icons/icon-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "icons/icon-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
