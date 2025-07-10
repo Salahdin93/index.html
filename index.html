@@ -5,12 +5,12 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Le Chemin Vers Le Coran</title>
     
-    <!-- ÉTAPE 3.1 : Lier le fichier Manifest -->
-    <link rel="manifest" href="manifest.json">
+    <link rel="manifest" href="./manifest.json">
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/animejs/3.2.1/anime.min.js"></script>
-    <script src="translations.js"></script>
+    <script src="./translations.js"></script>
+    
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700&display=swap');
         @import url('https://fonts.googleapis.com/css2?family=Amiri:wght@400;700&display=swap');
@@ -1940,21 +1940,47 @@
             document.getElementById('resume-program-desc').textContent = t('resumeProgramDesc');
         };
 
-        function setupLoginHandler() {
+                function setupLoginHandler() {
             const passwordInput = document.getElementById('password-input');
             const loginButton = document.getElementById('login-button');
             const passwordError = document.getElementById('password-error');
+
             const attemptLogin = () => {
-                if (state.profile && passwordInput.value === state.profile.password) { initAppUI(); } 
-                else { passwordError.textContent = t('wrongPassword'); passwordError.classList.remove('hidden'); passwordInput.value = ''; passwordInput.focus(); }
+                // CORRECTION : Recharger l'état au moment du clic garantit que
+                // le profil nouvellement créé est bien lu depuis localStorage.
+                loadState(); 
+                
+                if (!state.profile || !state.profile.password) {
+                    passwordError.textContent = "Aucun profil n'a été configuré. Veuillez en créer un.";
+                    passwordError.classList.remove('hidden');
+                    return;
+                }
+
+                if (passwordInput.value === state.profile.password) {
+                    initAppUI();
+                } else {
+                    passwordError.textContent = t('wrongPassword');
+                    passwordError.classList.remove('hidden');
+                    passwordInput.value = '';
+                    passwordInput.focus();
+                }
             };
-            loginButton.addEventListener('click', attemptLogin);
-            passwordInput.addEventListener('keyup', (e) => e.key === 'Enter' && attemptLogin());
-            document.getElementById('forgot-password-link').addEventListener('click', () => window.handleResetApp());
-            document.getElementById('back-to-welcome-btn').addEventListener('click', () => {
+
+            // Utiliser .onclick est plus simple et évite les doublons d'écouteurs ici.
+            loginButton.onclick = attemptLogin; 
+            passwordInput.onkeyup = (e) => { if (e.key === 'Enter') attemptLogin(); };
+            
+            document.getElementById('forgot-password-link').onclick = () => {
+                if (confirm(t('confirmReset'))) {
+                    localStorage.clear();
+                    window.location.reload();
+                }
+            };
+
+            document.getElementById('back-to-welcome-btn').onclick = () => {
                  loginScreen.classList.add('hidden');
                  showWelcomeScreen();
-            });
+            };
         }
 
         window.setStartLanguage = function(lang) {
@@ -2173,44 +2199,49 @@
             window.updateTheme(newTheme);
         }
 
+                // --- SÉQUENCE DE DÉMARRAGE CORRIGÉE ---
+
         function startApplicationFlow() {
             splashScreen.style.display = "flex";
             setTimeout(() => {
                 splashScreen.style.display = "none";
-                if (state.profile && state.profile.password) {
+                
+                // Re-vérifier l'état après le splash screen
+                const savedState = localStorage.getItem('quranCompanionState_v7');
+                const profileExists = savedState && JSON.parse(savedState).profile && JSON.parse(savedState).profile.password;
+
+                if (profileExists) {
+                    // Si un profil existe, on va directement à l'écran de connexion
                     showLoginScreen();
                     setupLoginHandler();
                 } else {
+                    // Sinon, on affiche l'écran d'accueil pour créer un profil
                     showWelcomeScreen();
                 }
             }, 4000);
         }
 
-        // ##### INITIALIZATION LOGIC #####
+        // Chargement initial des données et de la traduction
         loadState();
         applyThemeAndLang();
         translateStaticUI();
 
+        // Logique de décision initiale
         const savedLang = localStorage.getItem("language");
-
         if (!savedLang) {
             languageScreen.style.display = "flex";
         } else {
             startApplicationFlow();
         }
         
+        // Écouteurs pour les boutons de l'écran d'accueil
         document.getElementById('create-profile-btn').addEventListener('click', showInitialChoiceScreen);
-        
         document.getElementById('login-btn').addEventListener('click', () => {
-            if (state.profile) { 
-                showLoginScreen();
-                setupLoginHandler();
-            } else {
-                showInitialChoiceScreen(); 
-            }
+            showLoginScreen();
+            setupLoginHandler();
         });
         
-        // ### ÉTAPE 3.2 : Enregistrer le Service Worker ###
+        // Enregistrement du Service Worker pour la PWA
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
                 navigator.serviceWorker.register('./sw.js')
