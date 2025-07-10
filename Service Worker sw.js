@@ -1,9 +1,11 @@
 const CACHE_NAME = 'quran-companion-cache-v1';
 // Liste des fichiers à mettre en cache pour que l'app fonctionne hors ligne.
 const urlsToCache = [
-  './le-chemin-vers-le-coran.html',
+  './', // Ajoute la racine du site
+  './index.html', // Renommé de le-chemin-vers-le-coran.html
   './translations.js',
   './manifest.json',
+  './sw.js', // Le service worker doit se mettre en cache lui-même
   'https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js',
   'https://cdnjs.cloudflare.com/ajax/libs/animejs/3.2.1/anime.min.js',
   'https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700&display=swap',
@@ -12,7 +14,6 @@ const urlsToCache = [
   './icons/icon-192x192.png',
   './icons/icon-512x512.png'
 ];
-
 // 1. Installation du Service Worker et mise en cache des fichiers
 self.addEventListener('install', event => {
   event.waitUntil(
